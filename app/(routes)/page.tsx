@@ -32,33 +32,58 @@ export default function MarketPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="mb-6 rounded-2xl border border-border bg-panel p-6 shadow-panel">
-        <h1 className="text-3xl font-bold tracking-tight text-ink">Market Overview</h1>
-        <div className="mt-3 flex items-center gap-2 text-sm text-mist">
-          <span>New to crypto?</span>
-          <Link
-            href="/guide"
-            title="Open a beginner-friendly explanation of crypto terms and this app's metrics"
-            className="inline-flex items-center rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1.5 font-semibold text-cyan-700 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-300"
-          >
-            Read the quick guide
-          </Link>
-          <Link
-            href="/dashboard"
-            title="Open the Power BI-style dashboard with KPI cards, charts, and filters"
-            className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 font-semibold text-emerald-700 transition hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-300"
-          >
-            Open Dashboard View
-          </Link>
+      <section className="relative mb-6 overflow-hidden rounded-2xl border border-slate-700/60 bg-slate-950 p-6 shadow-panel sm:p-8">
+        <div className="pointer-events-none absolute -top-16 -left-20 h-56 w-56 rounded-full bg-cyan-400/20 blur-3xl" />
+        <div className="pointer-events-none absolute -right-16 -bottom-20 h-64 w-64 rounded-full bg-emerald-400/20 blur-3xl" />
+        <div className="relative">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300/90">Crypto Intelligence Hub</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">Market Overview</h1>
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300">
+            Track live crypto market movement, compare top assets, and jump to advanced analytics from one place.
+          </p>
+
+          <div className="mt-5 flex flex-wrap items-center gap-2 text-sm text-slate-300">
+            <span>New to crypto?</span>
+            <Link
+              href="/guide"
+              title="Open a beginner-friendly explanation of crypto terms and this app's metrics"
+              className="inline-flex items-center rounded-full border border-cyan-300/50 bg-cyan-400/10 px-3 py-1.5 font-semibold text-cyan-200 transition hover:-translate-y-0.5 hover:bg-cyan-400/20 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+            >
+              Read the quick guide
+            </Link>
+            <Link
+              href="/dashboard"
+              title="Open the Power BI-style dashboard with KPI cards, charts, and filters"
+              className="inline-flex items-center rounded-full border border-emerald-300/50 bg-emerald-400/10 px-3 py-1.5 font-semibold text-emerald-200 transition hover:-translate-y-0.5 hover:bg-emerald-400/20 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+            >
+              Open Dashboard View
+            </Link>
+          </div>
+
+          <div className="mt-6 grid gap-2 sm:grid-cols-3">
+            <div className="rounded-lg border border-slate-700/80 bg-slate-900/70 px-3 py-2 transition hover:border-cyan-300/60">
+              <div className="text-[11px] uppercase tracking-wider text-slate-400">Live Prices</div>
+              <div className="text-sm font-semibold text-white">Real-time market table</div>
+            </div>
+            <div className="rounded-lg border border-slate-700/80 bg-slate-900/70 px-3 py-2 transition hover:border-cyan-300/60">
+              <div className="text-[11px] uppercase tracking-wider text-slate-400">Wallet Connect</div>
+              <div className="text-sm font-semibold text-white">Portfolio-ready access</div>
+            </div>
+            <div className="rounded-lg border border-slate-700/80 bg-slate-900/70 px-3 py-2 transition hover:border-cyan-300/60">
+              <div className="text-[11px] uppercase tracking-wider text-slate-400">AI Assistant</div>
+              <div className="text-sm font-semibold text-white">Tuffy insights on demand</div>
+            </div>
+          </div>
+
+          <DataSourceNote
+            className="mt-4 text-slate-300"
+            source={meta?.source || "CoinGecko API (via `/api/market/top`)"} 
+            lastUpdated={meta?.last_updated}
+            stale={meta?.stale}
+            cache={meta?.cache}
+          />
         </div>
-        <DataSourceNote
-          className="mt-1"
-          source={meta?.source || "CoinGecko API (via `/api/market/top`)"} 
-          lastUpdated={meta?.last_updated}
-          stale={meta?.stale}
-          cache={meta?.cache}
-        />
-      </div>
+      </section>
 
       {isLoading && (
         <div className="mb-4 rounded-xl border border-border bg-panel p-4 shadow-panel">

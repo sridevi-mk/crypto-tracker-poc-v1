@@ -6,8 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard" },
   { href: "/", label: "Market" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/portfolio", label: "Portfolio" },
   { href: "/screener", label: "Screener" },
   { href: "/chat", label: "AI Chat" },
@@ -42,9 +42,11 @@ export function TopNav() {
   }, [pathname, sessionQuery]);
 
   return (
-    <header className="border-b border-border bg-white/80 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-border bg-slate-950/80 backdrop-blur">
       <nav className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-3">
-        <span className="mr-2 text-sm font-semibold text-ink">CryptoTracker</span>
+        <span className="-ml-1 mr-6 inline-flex items-center rounded-lg border border-cyan-400/30 bg-slate-900/70 px-2.5 py-1 text-lg font-extrabold tracking-[0.08em] text-transparent bg-gradient-to-r from-cyan-300 via-sky-200 to-emerald-300 bg-clip-text shadow-[0_0_18px_rgba(56,189,248,0.22)] sm:text-xl">
+          Crypto Tracker
+        </span>
         {NAV_ITEMS.map((item) => {
           const active = isActive(pathname, item.href);
           return (
@@ -53,15 +55,15 @@ export function TopNav() {
               href={item.href}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                 active
-                  ? "bg-slate-900 text-white"
-                  : "border border-border bg-white text-ink hover:bg-slate-50"
+                  ? "bg-cyan-500/20 text-cyan-200"
+                  : "border border-border bg-slate-900/70 text-slate-200 hover:bg-slate-800"
               }`}
             >
               {item.label}
             </Link>
           );
         })}
-        <div className="ml-auto text-xs text-mist">
+        <div className="ml-auto text-xs text-slate-400">
           {sessionQuery.data?.isAuthenticated && sessionQuery.data?.username
             ? `Signed in as ${sessionQuery.data.username}`
             : "Not signed in"}

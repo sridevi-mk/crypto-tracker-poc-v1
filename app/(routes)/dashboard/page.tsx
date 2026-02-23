@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { DataSourceNote } from "../../../components/DataSourceNote";
 
@@ -16,11 +16,6 @@ type CoinRow = {
   market_cap: number;
   total_volume: number;
   price_change_percentage_24h: number;
-};
-
-type WatchlistResponse = {
-  watchlist: string[];
-  unauthorized?: boolean;
 };
 
 type MarketResponse = {
@@ -84,7 +79,6 @@ function median(values: number[]) {
 }
 
 export default function DashboardPage() {
-  const queryClient = useQueryClient();
   const [cachedWatchlist, setCachedWatchlist] = useState<string[]>([]);
   const [topN, setTopN] = useState(50);
   const [minMarketCap, setMinMarketCap] = useState(0);
@@ -113,24 +107,6 @@ export default function DashboardPage() {
     staleTime: 30000,
   });
 
-  const watchlistQuery = useQuery<WatchlistResponse>({
-    queryKey: ["user-watchlist"],
-    queryFn: async () => {
-      const res = await fetch("/api/user/watchlist");
-      const body = await res.json().catch(() => null);
-      if (res.status === 401) return { watchlist: [], unauthorized: true };
-      if (!res.ok) throw new Error(body?.error || "Failed to fetch watchlist");
-      return body as WatchlistResponse;
-    },
-    placeholderData: cachedWatchlist.length
-      ? {
-          watchlist: cachedWatchlist,
-          unauthorized: false,
-        }
-      : undefined,
-    staleTime: 30_000,
-  });
-
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem("ct_watchlist_symbols");
@@ -139,108 +115,18 @@ export default function DashboardPage() {
       if (!Array.isArray(parsed)) return;
       const symbols = parsed.map((s) => String(s).toUpperCase());
       setCachedWatchlist(symbols);
-      queryClient.setQueryData<WatchlistResponse>(["user-watchlist"], (prev) => {
-        if (prev?.watchlist?.length) return prev;
-        return {
-          watchlist: symbols,
-          unauthorized: false,
-        };
-      });
     } catch {
       // ignore storage failures
     }
-  }, [queryClient]);
+  }, []);
 
   useEffect(() => {
-    if (!watchlistQuery.data || watchlistQuery.data.unauthorized) return;
-    const symbols = (watchlistQuery.data.watchlist || []).map((s) => s.toUpperCase());
-    setCachedWatchlist(symbols);
     try {
-      window.localStorage.setItem("ct_watchlist_symbols", JSON.stringify(symbols));
+      window.localStorage.setItem("ct_watchlist_symbols", JSON.stringify(cachedWatchlist));
     } catch {
       // ignore storage failures
     }
-  }, [watchlistQuery.data]);
-
-  const addWatchMutation = useMutation<
-    WatchlistResponse,
-    Error,
-    string,
-    { previous?: WatchlistResponse }
-  >({
-    mutationFn: async (symbol: string) => {
-      const res = await fetch("/api/user/watchlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbol }),
-      });
-      const body = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(body?.error || "Failed to add watchlist symbol");
-      return body as WatchlistResponse;
-    },
-    onMutate: async (symbol: string) => {
-      await queryClient.cancelQueries({ queryKey: ["user-watchlist"] });
-      const previous = queryClient.getQueryData<WatchlistResponse>(["user-watchlist"]);
-      const prevList = previous?.watchlist || [];
-      const up = symbol.toUpperCase();
-      if (!prevList.includes(up)) {
-        queryClient.setQueryData<WatchlistResponse>(["user-watchlist"], {
-          watchlist: [...prevList, up],
-          unauthorized: previous?.unauthorized,
-        });
-      }
-      setWatchInput("");
-      setWatchMessage("Symbol added to watchlist");
-      return { previous };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user-watchlist"] });
-    },
-    onError: (err, _symbol, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData<WatchlistResponse>(["user-watchlist"], context.previous);
-      }
-      setWatchMessage(err instanceof Error ? err.message : "Failed to add watchlist symbol");
-    },
-  });
-
-  const removeWatchMutation = useMutation<
-    WatchlistResponse,
-    Error,
-    string,
-    { previous?: WatchlistResponse }
-  >({
-    mutationFn: async (symbol: string) => {
-      const res = await fetch("/api/user/watchlist", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symbol }),
-      });
-      const body = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(body?.error || "Failed to remove watchlist symbol");
-      return body as WatchlistResponse;
-    },
-    onMutate: async (symbol: string) => {
-      await queryClient.cancelQueries({ queryKey: ["user-watchlist"] });
-      const previous = queryClient.getQueryData<WatchlistResponse>(["user-watchlist"]);
-      const up = symbol.toUpperCase();
-      queryClient.setQueryData<WatchlistResponse>(["user-watchlist"], {
-        watchlist: (previous?.watchlist || []).filter((s) => s.toUpperCase() !== up),
-        unauthorized: previous?.unauthorized,
-      });
-      setWatchMessage("Symbol removed from watchlist");
-      return { previous };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user-watchlist"] });
-    },
-    onError: (err, _symbol, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData<WatchlistResponse>(["user-watchlist"], context.previous);
-      }
-      setWatchMessage(err instanceof Error ? err.message : "Failed to remove watchlist symbol");
-    },
-  });
+  }, [cachedWatchlist]);
 
   const backtestMutation = useMutation({
     mutationFn: async () => {
@@ -273,9 +159,8 @@ export default function DashboardPage() {
   }, [allItems]);
 
   const watchlistRows = useMemo(() => {
-    const symbols = watchlistQuery.data?.watchlist || [];
-    return symbols.map((s) => ({ symbol: s, coin: bySymbol.get(s.toUpperCase()) || null }));
-  }, [watchlistQuery.data?.watchlist, bySymbol]);
+    return cachedWatchlist.map((s) => ({ symbol: s, coin: bySymbol.get(s.toUpperCase()) || null }));
+  }, [cachedWatchlist, bySymbol]);
 
   const items = useMemo(() => {
     const base = allItems.filter((c) => (c.market_cap || 0) >= minMarketCap);
@@ -331,8 +216,18 @@ export default function DashboardPage() {
   function handleAddWatchlist() {
     const symbol = watchInput.trim().toUpperCase();
     if (!symbol) return;
-    setWatchMessage(null);
-    addWatchMutation.mutate(symbol);
+    if (cachedWatchlist.includes(symbol)) {
+      setWatchMessage("Symbol already in watchlist");
+      return;
+    }
+    setCachedWatchlist((prev) => [...prev, symbol]);
+    setWatchInput("");
+    setWatchMessage("Symbol added to watchlist");
+  }
+
+  function handleRemoveWatchlist(symbol: string) {
+    setCachedWatchlist((prev) => prev.filter((s) => s.toUpperCase() !== symbol.toUpperCase()));
+    setWatchMessage("Symbol removed from watchlist");
   }
 
   return (
@@ -387,19 +282,13 @@ export default function DashboardPage() {
             />
             <button
               onClick={handleAddWatchlist}
-              disabled={watchlistQuery.data?.unauthorized}
-              className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
+              className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
             >
               Add
             </button>
           </div>
         </div>
         {watchMessage && <p className="mt-2 text-xs text-mist">{watchMessage}</p>}
-        {watchlistQuery.data?.unauthorized && (
-          <p className="mt-2 text-xs text-amber-700">
-            Sign in from the Portfolio page to save and manage your watchlist.
-          </p>
-        )}
         <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-3">
           {watchlistRows.length === 0 && (
             <div className="rounded-lg border border-dashed border-border bg-white px-3 py-3 text-sm text-mist">
@@ -411,9 +300,8 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-ink">{symbol}</span>
                 <button
-                  onClick={() => removeWatchMutation.mutate(symbol)}
-                  disabled={watchlistQuery.data?.unauthorized}
-                  className="rounded-md border border-border px-2 py-1 text-xs text-ink hover:bg-slate-50 disabled:opacity-60"
+                  onClick={() => handleRemoveWatchlist(symbol)}
+                  className="rounded-md border border-border px-2 py-1 text-xs text-ink hover:bg-slate-50"
                 >
                   Remove
                 </button>
@@ -677,12 +565,12 @@ export default function DashboardPage() {
             <h2 className="text-sm font-semibold text-ink">Top Gainers (24h)</h2>
             <div className="mt-3 space-y-2">
               {gainers.map((c) => (
-                <div key={c.id} className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2">
+                <div key={c.id} className="flex items-center justify-between rounded-lg border border-emerald-800/70 bg-emerald-900/35 px-3 py-2">
                   <div className="flex items-center gap-2">
                     <img src={c.image} alt={c.symbol} width={20} height={20} />
-                    <span className="text-sm font-medium text-ink">{c.name}</span>
+                    <span className="text-sm font-medium text-emerald-100">{c.name}</span>
                   </div>
-                  <span className="text-sm font-semibold text-emerald-700">{change24h(c).toFixed(2)}%</span>
+                  <span className="text-sm font-semibold text-emerald-300">{change24h(c).toFixed(2)}%</span>
                 </div>
               ))}
             </div>
@@ -692,12 +580,12 @@ export default function DashboardPage() {
             <h2 className="text-sm font-semibold text-ink">Top Losers (24h)</h2>
             <div className="mt-3 space-y-2">
               {losers.map((c) => (
-                <div key={c.id} className="flex items-center justify-between rounded-lg bg-rose-50 px-3 py-2">
+                <div key={c.id} className="flex items-center justify-between rounded-lg border border-rose-800/70 bg-rose-900/35 px-3 py-2">
                   <div className="flex items-center gap-2">
                     <img src={c.image} alt={c.symbol} width={20} height={20} />
-                    <span className="text-sm font-medium text-ink">{c.name}</span>
+                    <span className="text-sm font-medium text-rose-100">{c.name}</span>
                   </div>
-                  <span className="text-sm font-semibold text-rose-700">{change24h(c).toFixed(2)}%</span>
+                  <span className="text-sm font-semibold text-rose-300">{change24h(c).toFixed(2)}%</span>
                 </div>
               ))}
             </div>

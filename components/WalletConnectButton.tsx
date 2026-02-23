@@ -36,20 +36,24 @@ export function WalletConnectButton() {
     );
   }
 
-  const defaultConnector =
-    connectors?.find((c) => c.id === "injected") || connectors?.[0];
-  const noWalletDetected = !defaultConnector;
+  async function handleConnect(connectorId?: string) {
+    const connector = connectorId
+      ? connectors.find((c) => c.id === connectorId)
+      : connectors?.find((c) => c.id === "injected") || connectors?.[0];
 
-  async function handleConnect() {
-    if (!defaultConnector) {
-      setConnectError("No browser wallet detected. Install MetaMask or open in a wallet browser.");
+    if (!connector) {
+      setConnectError("No wallet connector is configured.");
       return;
     }
+
     setConnectError(null);
     try {
-      await connectAsync({ connector: defaultConnector });
+      await connectAsync({ connector });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Wallet connection failed.";
+      const raw = err instanceof Error ? err.message : "Wallet connection failed.";
+      const msg = /provider not found/i.test(raw)
+        ? "No injected wallet found in this browser. Use WalletConnect/Coinbase option below or install MetaMask."
+        : raw;
       setConnectError(msg);
     }
   }
@@ -57,14 +61,25 @@ export function WalletConnectButton() {
   return (
     <div className="flex flex-col gap-1">
       <button
-        onClick={handleConnect}
+        onClick={() => handleConnect()}
         disabled={isPending}
         className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isPending ? 'Connecting...' : 'Connect Wallet'}
       </button>
-      {noWalletDetected && (
-        <p className="text-xs text-amber-700">No injected wallet detected in this browser.</p>
+      {connectors?.length > 1 && (
+        <div className="mt-1 flex flex-wrap gap-2">
+          {connectors.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => handleConnect(c.id)}
+              disabled={isPending}
+              className="rounded-md border border-border bg-white px-2 py-1 text-xs text-ink hover:bg-slate-50 disabled:opacity-60"
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
       )}
       {connectError && (
         <p className="max-w-md text-xs text-rose-700">{connectError}</p>

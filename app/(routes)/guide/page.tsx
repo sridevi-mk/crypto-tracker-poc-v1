@@ -50,6 +50,16 @@ export default function GuidePage() {
       <p className="mt-2 text-sm text-slate-700">
         Tuffy is for educational help, not investment decisions. Always verify data yourself.
       </p>
+      <p className="mt-2 text-sm text-slate-700">
+        The app has both a chat widget and a full chat page by design:
+      </p>
+      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+        <li><b>Widget:</b> quick questions while browsing market, dashboard, or portfolio.</li>
+        <li><b>Full page (/chat):</b> longer conversations and focused chat workflow.</li>
+      </ul>
+      <p className="mt-2 text-sm text-slate-700">
+        Recommended use: start with the widget for fast checks, switch to the full page when you need deeper guidance.
+      </p>
       <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"><b>Reminder:</b> Not financial advice.</p>
       </div>
     </main>

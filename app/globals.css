@@ -2,21 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .text-ink { color: #101828; }
-  .text-mist { color: #475467; }
-  .bg-panel { background-color: #ffffff; }
-  .border-border { border-color: #e4e7ec; }
-  .shadow-panel { box-shadow: 0 10px 24px rgba(16, 24, 40, 0.08); }
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
 }
 
-:root {
-  color-scheme: light;
+@layer utilities {
+  .text-ink { color: #e5e7eb; }
+  .text-mist { color: #9ca3af; }
+  .bg-panel { background-color: #0f172a; }
+  .border-border { border-color: #334155; }
+  .shadow-panel { box-shadow: 0 14px 30px rgba(2, 6, 23, 0.45); }
+
+  .bg-white { background-color: #111827; }
+  .bg-slate-50 { background-color: #0b1220; }
+  .bg-slate-100 { background-color: #1f2937; }
 }
 
 body {
   @apply bg-slate-50 text-ink antialiased;
   background-image:
-    radial-gradient(circle at 10% 0%, rgba(14, 165, 233, 0.12) 0, transparent 36%),
-    radial-gradient(circle at 90% 100%, rgba(16, 185, 129, 0.12) 0, transparent 36%);
+    radial-gradient(circle at 8% 0%, rgba(56, 189, 248, 0.14) 0, transparent 34%),
+    radial-gradient(circle at 90% 100%, rgba(16, 185, 129, 0.14) 0, transparent 34%),
+    linear-gradient(180deg, #020617 0%, #0b1220 45%, #0f172a 100%);
 }
