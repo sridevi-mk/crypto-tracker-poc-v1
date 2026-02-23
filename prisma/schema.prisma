@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String      @id @default(cuid())
+  username     String      @unique
+  passwordHash String
+  passwordSalt String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  sessions     Session[]
+  wallets      Wallet[]
+  preference   Preference?
+  alertRules   AlertRule[]
+  deliveries   AlertDelivery[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String
+  address   String
+  chain     String   @default("ethereum")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, address, chain])
+  @@index([address])
+  @@map("wallets")
+}
+
+model Preference {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  selectedCurrency String   @default("USD")
+  watchlist        Json
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("preferences")
+}
+
+enum AlertCondition {
+  price_above
+  price_below
+  change_24h_above
+  change_24h_below
+}
+
+enum DeliveryStatus {
+  sent
+  failed
+  skipped
+}
+
+model AlertRule {
+  id                  String         @id @default(cuid())
+  userId              String
+  symbol              String
+  condition           AlertCondition
+  threshold           Float
+  enabled             Boolean        @default(true)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  lastEvaluatedAt     DateTime?
+  lastTriggeredAt     DateTime?
+  lastDeliveryStatus  DeliveryStatus?
+  lastDeliveryMessage String?
+  nextRunAt           DateTime?
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries          AlertDelivery[]
+
+  @@index([userId, enabled])
+  @@index([nextRunAt])
+  @@map("alert_rules")
+}
+
+model AlertDelivery {
+  id          String         @id @default(cuid())
+  alertRuleId String
+  userId      String
+  dedupeKey   String?        @unique
+  status      DeliveryStatus
+  triggered   Boolean
+  message     String
+  provider    String?
+  recipient   String?
+  createdAt   DateTime       @default(now())
+  alertRule   AlertRule       @relation(fields: [alertRuleId], references: [id], onDelete: Cascade)
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([alertRuleId, createdAt])
+  @@index([userId, createdAt])
+  @@map("alert_deliveries")
+}
+
+model AlertRun {
+  id          String   @id @default(cuid())
+  runKey      String   @unique
+  processed   Int
+  sent        Int
+  failed      Int
+  skipped     Int
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  status      String
+  errorMessage String?
+
+  @@index([startedAt])
+  @@map("alert_runs")
+}

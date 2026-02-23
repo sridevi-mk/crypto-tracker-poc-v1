@@ -3,9 +3,9 @@ import { z } from 'zod';
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 const ALCHEMY_NETWORK = process.env.ALCHEMY_NETWORK || 'eth-mainnet';
 
-if (!ALCHEMY_API_KEY) throw new Error('Missing ALCHEMY_API_KEY');
-
-const BASE_URL = `https://${ALCHEMY_NETWORK}.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
+const BASE_URL = ALCHEMY_API_KEY
+  ? `https://${ALCHEMY_NETWORK}.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
+  : '';
 
 export const addressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/);
 
@@ -23,6 +23,9 @@ export interface BalancesResult {
 }
 
 export async function getBalances(address: string): Promise<BalancesResult> {
+  if (!ALCHEMY_API_KEY) {
+    throw new Error('Missing ALCHEMY_API_KEY');
+  }
   addressSchema.parse(address);
   // Native balance
   const nativeRes = await fetch(`${BASE_URL}`, {

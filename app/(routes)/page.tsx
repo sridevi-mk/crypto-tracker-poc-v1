@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { MarketSnapshot } from '../../components/MarketSnapshot';
 import { MarketTable } from '../../components/MarketTable';
+import { DataSourceNote } from '../../components/DataSourceNote';
 import Link from 'next/link';
 
 const REFRESH_MS = Number(process.env.NEXT_PUBLIC_REFRESH_MS) || 30000;
@@ -26,6 +27,8 @@ export default function MarketPage() {
   });
 
   const items = data?.coins || [];
+  const meta = data?.meta;
+  const showEmpty = !isLoading && !error && items.length === 0;
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -48,8 +51,42 @@ export default function MarketPage() {
             Open Dashboard View
           </Link>
         </div>
-        <p className="mt-1 text-xs text-mist">Data source: CoinGecko API (via `/api/market/top`)</p>
+        <DataSourceNote
+          className="mt-1"
+          source={meta?.source || "CoinGecko API (via `/api/market/top`)"} 
+          lastUpdated={meta?.last_updated}
+          stale={meta?.stale}
+          cache={meta?.cache}
+        />
       </div>
+
+      {isLoading && (
+        <div className="mb-4 rounded-xl border border-border bg-panel p-4 shadow-panel">
+          <div className="text-sm font-medium text-ink">Loading market data...</div>
+          <div className="mt-1 text-xs text-mist">
+            Fetching latest prices, market caps, and 24h performance.
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-4">
+          <div className="text-sm font-semibold text-rose-700">Unable to load market data</div>
+          <div className="mt-1 text-xs text-rose-700/90">
+            {error.message}. Please retry in a few seconds.
+          </div>
+        </div>
+      )}
+
+      {showEmpty && (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div className="text-sm font-semibold text-amber-800">No market rows found</div>
+          <div className="mt-1 text-xs text-amber-800/90">
+            Data source returned an empty list. Try refreshing or check API availability.
+          </div>
+        </div>
+      )}
+
       <MarketSnapshot items={items} />
       <MarketTable items={items} isLoading={isLoading} error={error?.message} />
     </main>

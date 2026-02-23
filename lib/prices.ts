@@ -1,6 +1,7 @@
 import { fetchCoinGecko } from './coingecko';
 
-const SYMBOL_TO_ID: Record<string, string> = {
+export const SYMBOL_TO_ID: Record<string, string> = {
+  BTC: 'bitcoin',
   ETH: 'ethereum',
   USDC: 'usd-coin',
   USDT: 'tether',
@@ -14,7 +15,7 @@ interface SimplePriceResponse {
   };
 }
 
-function toCoinGeckoId(symbolOrId: string): string {
+export function toCoinGeckoId(symbolOrId: string): string {
   const trimmed = symbolOrId.trim();
   const fromSymbol = SYMBOL_TO_ID[trimmed.toUpperCase()];
   if (fromSymbol) return fromSymbol;

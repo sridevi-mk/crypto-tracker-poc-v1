@@ -74,13 +74,27 @@ export function TuffyChatWidget() {
           page_context: usePageContext ? getPageContext() : undefined,
         }),
       });
-      const data = (await res.json()) as ChatApiResponse;
+      const contentType = res.headers.get("content-type") || "";
+      const raw = await res.text();
+      let data: ChatApiResponse | null = null;
+      if (contentType.includes("application/json")) {
+        try {
+          data = JSON.parse(raw) as ChatApiResponse;
+        } catch {
+          data = null;
+        }
+      }
       if (!res.ok) {
-        throw new Error(data?.message || "Could not reach chat right now.");
+        throw new Error(
+          data?.message ||
+            (contentType.includes("text/html")
+              ? `Chat endpoint returned HTML (${res.status}).`
+              : `Could not reach chat right now (${res.status}).`)
+        );
       }
 
-      const reply = data.reply?.trim() || "I could not generate a response.";
-      const disclaimer = data.disclaimer?.trim();
+      const reply = data?.reply?.trim() || "I could not generate a response.";
+      const disclaimer = data?.disclaimer?.trim();
       const finalText = disclaimer ? `${reply}\n\n${disclaimer}` : reply;
 
       setMessages((prev) => [...prev, { id: messageId(), role: "assistant", text: finalText }]);

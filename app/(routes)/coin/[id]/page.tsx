@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useQuery } from '@tanstack/react-query';
 import { CoinChart } from '../../../../components/CoinChart';
+import { DataSourceNote } from '../../../../components/DataSourceNote';
 import { useParams } from 'next/navigation';
 
 const RANGE_OPTS = [
@@ -37,11 +38,25 @@ export default function CoinPage() {
     staleTime: 30000,
   });
 
+  const source = coin?.meta?.source || chart?.meta?.source || "CoinGecko API";
+  const lastUpdated = chart?.meta?.last_updated || coin?.meta?.last_updated;
+  const stale = Boolean(coin?.meta?.stale || chart?.meta?.stale);
+  const cache = stale ? "STALE" : (chart?.meta?.cache || coin?.meta?.cache);
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <p className="mb-4 text-xs text-mist">
-        Data source: CoinGecko API (via `/api/market/coin/[id]` and `/api/market/coin/[id]/chart`)
-      </p>
+      <DataSourceNote
+        className="mb-4"
+        source={source}
+        lastUpdated={lastUpdated}
+        stale={stale}
+        cache={cache}
+      />
+      {stale && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          Live source is unavailable. Showing cached coin data.
+        </div>
+      )}
       {loadingCoin ? <div className="text-sm text-mist">Loading...</div> : errorCoin ? <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{errorCoin.message}</div> : coin && (
         <>
           <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight text-ink">

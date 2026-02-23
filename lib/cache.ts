@@ -20,3 +20,13 @@ export function cacheGet<T>(key: string): T | undefined {
 export function cacheSet<T>(key: string, value: T, ttlMs: number): void {
   cache.set(key, { value, expires: Date.now() + ttlMs });
 }
+
+export function cachePeek<T>(key: string): { value: T; expires: number; isExpired: boolean } | undefined {
+  const entry = cache.get(key);
+  if (!entry) return undefined;
+  return {
+    value: entry.value as T,
+    expires: entry.expires,
+    isExpired: Date.now() > entry.expires,
+  };
+}

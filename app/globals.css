@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .text-ink { color: #101828; }
+  .text-mist { color: #475467; }
+  .bg-panel { background-color: #ffffff; }
+  .border-border { border-color: #e4e7ec; }
+  .shadow-panel { box-shadow: 0 10px 24px rgba(16, 24, 40, 0.08); }
+}
+
 :root {
   color-scheme: light;
 }

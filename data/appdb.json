@@ -1,0 +1,38 @@
+{
+  "users": {
+    "sridevi": {
+      "username": "sridevi",
+      "wallets": [],
+      "preferences": {
+        "selectedCurrency": "USD",
+        "watchlist": [
+          "BTC",
+          "ETH",
+          "BNB"
+        ],
+        "updatedAt": "2026-02-20T18:17:47.049Z"
+      },
+      "alerts": [],
+      "updatedAt": "2026-02-20T18:17:47.049Z"
+    },
+    "bubbly_smile": {
+      "username": "bubbly_smile",
+      "wallets": [],
+      "preferences": {
+        "selectedCurrency": "USD",
+        "watchlist": [
+          "DOGE",
+          "BTC"
+        ],
+        "updatedAt": "2026-02-23T15:55:38.815Z"
+      },
+      "alerts": [],
+      "updatedAt": "2026-02-23T15:55:38.815Z",
+      "auth": {
+        "passwordHash": "d338406cdf8e5fa751240bb6b2a050b79e6d055b25f8c6f3885665458c63246e",
+        "passwordSalt": "300ed773fa7b31b3537d241c98360248",
+        "createdAt": "2026-02-20T20:41:25.532Z"
+      }
+    }
+  }
+}

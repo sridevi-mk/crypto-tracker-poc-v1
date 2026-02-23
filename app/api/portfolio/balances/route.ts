@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { getBalances } from '@/lib/alchemy';
 import { getUsdPrices } from '@/lib/prices';
+import { getAuthCookieName, verifySessionToken } from '@/lib/auth';
 
 const querySchema = z.object({
   address: z
@@ -16,15 +17,24 @@ function hexToFloat(hex: string, decimals: number): number | null {
   if (!Number.isInteger(decimals) || decimals < 0) return null;
   try {
     const raw = BigInt(hex);
-    const denom = 10 ** Math.min(decimals, 18);
+    const denom = Math.pow(10, Math.min(decimals, 18));
     if (!Number.isFinite(denom) || denom === 0) return null;
-    return Number(raw) / denom / 10 ** Math.max(decimals - 18, 0);
+    const extraScale = Math.pow(10, Math.max(decimals - 18, 0));
+    return Number(raw) / denom / extraScale;
   } catch {
     return null;
   }
 }
 
 export async function GET(req: NextRequest) {
+  const authToken = req.cookies.get(getAuthCookieName())?.value;
+  if (!(await verifySessionToken(authToken))) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   const url = new URL(req.url);
   const query = Object.fromEntries(url.searchParams.entries());
   const parse = querySchema.safeParse(query);
@@ -49,7 +59,7 @@ export async function GET(req: NextRequest) {
 
     const tokens = balances.tokens.map((t) => {
       const amount = hexToFloat(t.balance, t.decimals);
-      const usdPrice = (t.symbol && prices[t.symbol]) ?? null;
+      const usdPrice = t.symbol ? (prices[t.symbol] ?? null) : null;
       const usdValue = amount !== null && usdPrice !== null ? amount * usdPrice : null;
       return {
         contract: t.contract,
@@ -62,7 +72,7 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    const totalUsdValue = [nativeUsdValue, ...tokens.map((t) => t.usd_value)].reduce(
+    const totalUsdValue = [nativeUsdValue, ...tokens.map((t) => t.usd_value)].reduce<number>(
       (sum, value) => (typeof value === 'number' && Number.isFinite(value) ? sum + value : sum),
       0
     );
