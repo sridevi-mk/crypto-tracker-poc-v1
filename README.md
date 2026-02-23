@@ -1,125 +1,210 @@
-# CryptoTracker
+# Crypto Tracker
 
-## Setup
+Crypto Tracker is a modern crypto intelligence app that combines market data, portfolio visibility, alerts, and AI guidance in one product.
 
-1. Copy `.env.example` to `.env` and fill in values.
-2. Install dependencies from repo root:
-   ```bash
-   npm install
-   ```
-3. Start the app from repo root:
-   ```bash
-   npx next dev ./crptotracker-workspace
-   ```
+## Why this app
+- Fast market visibility: top coins, screener, movers, and trend context.
+- Personal utility: wallet connect + portfolio valuation + saved preferences.
+- Better decisions: AI assistant for explanations and portfolio-level context.
+- Production-ready foundation: auth, rate limits, alerts, scheduler-safe dispatch, and Postgres persistence.
 
-## Environment Variables
-Required:
-- `ALCHEMY_API_KEY`
-- `AUTH_SECRET`
-- `DATABASE_URL` (for Postgres + Prisma)
+## Core Features
+- Market overview and screener (CoinGecko-backed)
+- Coin detail + chart
+- Portfolio balances and USD valuation (Alchemy + CoinGecko mapping)
+- Wallet connectors (Injected / WalletConnect / Coinbase)
+- AI assistant:
+  - floating widget for quick help
+  - full `/chat` page for deeper conversation
+- Signup/signin/signout with secure session cookie
+- Persisted user data (preferences, saved wallets)
+- Alert rules + dispatch + run history
+- Backtesting Lite (DCA weekly / buy dip)
+- Readiness, predeploy, and postdeploy checks
 
-Common optional:
-- `LLM_PROVIDER` (`openai` or `ollama`)
-- `OPENAI_API_KEY`
-- `OPENAI_MODEL`
-- `OLLAMA_BASE_URL`
-- `OLLAMA_MODEL`
-- `ALCHEMY_NETWORK` (default: `eth-mainnet`)
-- `COINGECKO_API_KEY`
-- `COINGECKO_BASE_URL`
-- `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`
-- `NEXT_PUBLIC_REFRESH_MS`
-- `RATE_LIMIT_CHAT_PER_MINUTE`
-- `RATE_LIMIT_ALERTS_PER_MINUTE`
-- `RATE_LIMIT_ALERTS_DISPATCH_PER_MINUTE`
-- `RATE_LIMIT_AUTH_SIGNIN_PER_MINUTE`
-- `RATE_LIMIT_AUTH_SIGNUP_PER_MINUTE`
-- `AUTH_USERNAME` (bootstrap admin fallback)
-- `AUTH_PASSWORD` (bootstrap admin fallback)
-- `USER_STORE_BACKEND` (`postgres` or `file`, default uses postgres when `DATABASE_URL` is set)
-- `ALERTS_STORE_BACKEND` (`postgres` or `file`, default uses postgres when `DATABASE_URL` is set)
+## Tech Stack
+- Next.js (App Router) + TypeScript
+- React Query
+- Wagmi + Viem
+- Prisma + PostgreSQL
+- Zod validation
 
-## Run Commands
+## Quick Start
 From repo root:
+
+1. Install dependencies
 ```bash
-npx next dev ./crptotracker-workspace
-npx next build ./crptotracker-workspace
-npm test
-npm run prisma:generate
-npm run prisma:migrate
-npm run phase3:predeploy
-npm run phase3:postdeploy
+npm install
 ```
 
-## MVP Features
-- Market overview + screener (CoinGecko-backed)
-- Coin detail with chart
-- Wallet connect + portfolio balances and USD valuation
-- Tuffy AI chat endpoint and floating chat widget
-- Real signup + hashed-password sign-in with HttpOnly cookie session
-- Protected portfolio page and `/api/portfolio/*` routes
-- Persisted user preferences (currency/watchlist) and connected wallets
-- Alert rule APIs for price and 24h change thresholds (create/list/delete)
-- Cron-safe alert dispatch API with email provider abstraction and per-alert delivery status
-- Dashboard watchlist widget with add/remove/list flows via protected user APIs
-- Backtesting Lite card (DCA weekly / buy-dip) with ROI, max drawdown, and win rate summary
-- AI chat portfolio summary mode: top holdings concentration + stablecoin ratio with beginner-friendly risk note
-- Market API resilience: timeout handling, stale-cache fallback, and consistent source/last-updated metadata in UI
-- Prisma + Postgres production schema (users, sessions, wallets, preferences) with migration scaffold
-- Postgres-first user data layer for auth/preferences/watchlist/wallets with file-store fallback
-- Postgres alert persistence (`alert_rules`, `alert_deliveries`, `alert_runs`) with fallback compatibility
-- Idempotent alert worker runs (`run_key`) and delivery dedupe keys for scheduler-safe retries
+2. Create env file
+```bash
+cp crptotracker-workspace/.env.example crptotracker-workspace/.env
+```
 
-## Phase 1 Delivered
-- Global top navigation: Dashboard, Market, Portfolio, Screener, AI Chat, NFT, Guide
-- Full-page AI Chat route (`/chat`) in addition to the floating widget
-- NFT placeholder route (`/nft`) with planned feature cards
-- Enhanced dashboard KPIs (median change, top-5 concentration, breadth ratio)
-- Main market UX states: clearer loading, error, and empty handling
-- Screener UX upgrades: natural-language query summary + one-click clear filters
-- Portfolio beginner guidance + USD estimation notes
-- Reusable `Data source` note UI across Market/Screener/Dashboard/Coin/Portfolio
-- Server-side auth gate: `/signin` and middleware protection for portfolio routes
+3. Set minimum required values in `crptotracker-workspace/.env`
+- `ALCHEMY_API_KEY`
+- `AUTH_SECRET`
+- `DATABASE_URL`
+- `ALERTS_CRON_SECRET`
+- For AI:
+  - `LLM_PROVIDER=openai` with `OPENAI_API_KEY` + `OPENAI_MODEL`, or
+  - `LLM_PROVIDER=ollama` with `OLLAMA_BASE_URL` + `OLLAMA_MODEL`
+- For WalletConnect:
+  - `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`
 
-## Notes
-- Auth supports real user signup/signin with hashed passwords and optional env-admin fallback.
-- Chat provider can run via OpenAI or Ollama, depending on server env configuration.
-- Alert dispatch endpoint: `POST /api/alerts/dispatch` with `x-alerts-cron-secret`.
-- Alert dispatch accepts optional JSON body `{ "run_key": "custom-key" }` for replay-safe idempotent runs.
-- Admin run history endpoint: `GET /api/alerts/runs?limit=20` (admin-authenticated) to inspect recent scheduler runs.
-- Email provider: set `ALERTS_EMAIL_PROVIDER=log|resend` and configure related env vars.
-- Scheduler security: preferred signed headers `x-alerts-ts`, `x-alerts-nonce`, `x-alerts-signature` (HMAC-SHA256 over `ts.nonce.body`), with legacy secret header/bearer still supported.
-- Scheduler helper script: generate signed headers with `node scripts/sign-alerts-request.mjs --secret <ALERTS_CRON_SECRET> --body '{"run_key":"manual-1"}'`.
+4. Run Prisma
+```bash
+npm run prisma:generate
+npm run prisma:migrate
+```
 
-## Deployment
-- Set all required env vars in your hosting platform, especially auth, chat provider, and alert secrets.
-- Build and run:
-  ```bash
-  npx next build ./crptotracker-workspace
-  npx next start ./crptotracker-workspace -p 3001
-  ```
-- In production, keep `ALERTS_CRON_SECRET` strong and call `/api/alerts/dispatch` from a scheduled job.
-- Adjust rate limits (`RATE_LIMIT_*`) to match expected traffic and hosting constraints.
-- Post-deploy smoke test:
-  ```bash
-  APP_BASE_URL=https://your-app-domain.com ALERTS_CRON_SECRET=your_secret npm run phase3:postdeploy
-  ```
+5. Start app
+```bash
+npx next dev ./crptotracker-workspace -p 3001 --webpack
+```
 
-## Postgres Setup (Phase 3)
-1. Set `DATABASE_URL` in `crptotracker-workspace/.env`.
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Generate Prisma client:
-   ```bash
-   npm run prisma:generate
-   ```
-4. Apply migrations:
-   ```bash
-   npm run prisma:migrate
-   ```
-5. Run predeploy checks:
-   ```bash
-   npm run phase3:predeploy
-   ```
+Open: `http://localhost:3001`
+
+## Useful Commands
+From repo root:
+```bash
+npm test
+npx next build ./crptotracker-workspace
+npm run phase3:predeploy
+APP_BASE_URL=http://localhost:3001 ALERTS_CRON_SECRET=your_secret npm run phase3:postdeploy
+```
+
+## End-to-End Data Flow
+```mermaid
+flowchart LR
+  U[User Browser] --> FE[Next.js UI]
+  FE --> API[Next.js API Routes]
+
+  API --> CG[CoinGecko API]
+  API --> ALC[Alchemy API]
+  API --> LLM[OpenAI / Ollama]
+  API --> DB[(PostgreSQL via Prisma)]
+  API --> EMAIL[Email Provider]
+
+  SCH[EventBridge/Cron] --> AD[POST /api/alerts/dispatch]
+  AD --> API
+  API --> RUNS[(alert_runs / alert_deliveries)]
+
+  DB --> FE
+  API --> FE
+```
+
+### Data flow in simple words
+- UI calls internal APIs.
+- APIs fetch external market/wallet/AI data.
+- User-specific state and alerts are stored in Postgres.
+- Scheduled dispatcher evaluates alert rules and sends notifications.
+- UI renders combined real-time + persisted data.
+
+## AWS Deployment Architecture Options
+
+### Option 1: Container (ECS Fargate)
+```mermaid
+flowchart TD
+  U[Users / Browser] --> R53[Route 53]
+  R53 --> CF[CloudFront + WAF]
+  CF --> ALB[Application Load Balancer]
+
+  ALB --> ECS[ECS Service on Fargate\nNext.js App + API]
+  ECS --> RDS[(RDS PostgreSQL)]
+  ECS --> SM[Secrets Manager / SSM]
+  ECS --> CW[CloudWatch]
+
+  ECS --> CG[CoinGecko]
+  ECS --> ALC[Alchemy]
+  ECS --> LLM[OpenAI / Ollama]
+  ECS --> EMAIL[SES/Resend]
+
+  ECR[ECR] --> ECS
+  CI[GitHub Actions / CodePipeline] --> ECR
+
+  EVT[EventBridge Scheduler] --> DISPATCH[/api/alerts/dispatch]
+  DISPATCH --> ALB
+```
+
+Why these components (simple):
+- `ALB`: stable HTTPS entry and health checks.
+- `ECS Fargate`: run containerized Next.js without managing servers.
+- `RDS Postgres`: durable relational storage for users/sessions/alerts.
+- `Secrets Manager/SSM`: safe environment and secrets management.
+- `CloudWatch`: logs, metrics, alarms.
+- `EventBridge`: managed scheduler for alert dispatch.
+
+Best when:
+- You want minimal app refactor and predictable runtime behavior.
+
+### Option 2: Serverless (Lambda)
+```mermaid
+flowchart TD
+  U[Users / Browser] --> R53[Route 53]
+  R53 --> CF[CloudFront + WAF]
+
+  CF --> S3[S3 Static Assets]
+  CF --> SSR[Lambda for SSR + API]
+
+  SSR --> RDSProxy[RDS Proxy]
+  RDSProxy --> RDS[(RDS PostgreSQL)]
+  SSR --> SM[Secrets Manager / SSM]
+  SSR --> CW[CloudWatch + X-Ray]
+
+  SSR --> CG[CoinGecko]
+  SSR --> ALC[Alchemy]
+  SSR --> LLM[OpenAI / Ollama]
+  SSR --> EMAIL[SES/Resend]
+
+  EVT[EventBridge Scheduler] --> LALERT[Lambda alert dispatcher]
+```
+
+Why these components (simple):
+- `CloudFront + S3`: fast static delivery.
+- `Lambda`: scale-on-demand compute for SSR and APIs.
+- `RDS Proxy`: prevents DB connection storms from Lambda concurrency.
+- `Secrets Manager/SSM`: secure config.
+- `CloudWatch/X-Ray`: observability and tracing.
+- `EventBridge`: reliable schedule triggers.
+
+Best when:
+- You want elastic scale and pay-per-use for variable traffic.
+
+## Which AWS option should you choose?
+- Choose `ECS Fargate` if you want simpler Prisma + DB operations and fewer runtime surprises.
+- Choose `Lambda` if traffic is highly bursty and you want serverless scaling (with RDS Proxy).
+
+## Security & Reliability Notes
+- Keep `AUTH_SECRET` and `ALERTS_CRON_SECRET` strong.
+- Use signed scheduler headers for alerts in production.
+- Set rate limits (`RATE_LIMIT_*`) based on expected traffic.
+- Run `phase3:predeploy` and `phase3:postdeploy` before go-live.
+
+## Routes at a Glance
+- Main pages: `/`, `/dashboard`, `/portfolio`, `/screener`, `/chat`, `/guide`, `/nft`
+- Auth: `/signin`, `/signup`
+- Key APIs:
+  - `/api/market/*`
+  - `/api/portfolio/balances`
+  - `/api/chat`
+  - `/api/auth/*`
+  - `/api/user/*`
+  - `/api/alerts/*`
+  - `/api/system/readiness`
+
+## Project Structure (high level)
+```text
+crptotracker-workspace/
+  app/                 # Next.js routes + API endpoints
+  components/          # Reusable UI
+  lib/                 # Core business logic/services
+  prisma/              # Prisma schema + migrations
+  providers/           # Query/Wagmi providers
+```
+
+## Notes for New Contributors
+- Start with `app/(routes)/page.tsx` (market home) and `components/TopNav.tsx`.
+- Keep UI/data changes scoped; avoid broad refactors.
+- Add/adjust tests when changing API logic.
